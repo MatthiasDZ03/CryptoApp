@@ -483,3 +483,6 @@ $RECYCLE.BIN/
 
 # Interne Team-Anleitungen (nicht Teil der Abgabe)
 docs/team/
+
+# Python
+.venv/
