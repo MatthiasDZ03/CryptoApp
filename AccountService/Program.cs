@@ -1,4 +1,6 @@
 using System.Text.Json.Serialization;
+using AccountService.Settings;
+using AccountService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -9,8 +11,12 @@ builder.Services.AddControllers()
 builder.Services.AddSwaggerGen();
 
 // -------- Infrastruktur (Matthias) ----------
+builder.Services.Configure<MarketSettings>(builder.Configuration.GetSection("Market"));
+builder.Services.Configure<ApiKeySettings>(builder.Configuration.GetSection("ApiKey"));
+
 
 var app = builder.Build();
+
 
 if (app.Environment.IsDevelopment())
 {
