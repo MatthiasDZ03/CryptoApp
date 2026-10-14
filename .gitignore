@@ -480,3 +480,6 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Interne Team-Anleitungen (nicht Teil der Abgabe)
+docs/team/
