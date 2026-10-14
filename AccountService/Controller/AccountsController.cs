@@ -26,7 +26,7 @@ public class AccountsController : ControllerBase
         return await _db.Accounts.ToListAsync();
     }
 
-    // READ (eines): GET /api/v1/accounts/{id}
+    
     [HttpGet("{id:guid}")]
     public async Task<ActionResult<Account>> GetById(Guid id)
     {
@@ -38,5 +38,51 @@ public class AccountsController : ControllerBase
         return account;
     }
 
-    // HIER kommen in 6.2 bis 6.4 weitere Methoden dazu
+    [HttpPost]
+    public async Task<ActionResult<Account>> Create(CreateAccountRequest request)
+    {
+        if (CalculateAge(request.BirthDate!.Value) < MinimumAge)
+        {
+            ModelState.AddModelError(nameof(request.BirthDate),
+                $"Kunde muss mindestens {MinimumAge} Jahre alt sein.");
+            return ValidationProblem(ModelState);
+        }
+
+        var email = request.Email.Trim().ToLowerInvariant();
+        if (await _db.Accounts.AnyAsync(a => a.Email == email))
+        {
+            return Problem(detail: "E-Mail wird bereits verwendet.",
+                statusCode: StatusCodes.Status409Conflict);
+        }
+
+        var account = new Account
+        {
+            Id = Guid.NewGuid(),
+            FirstName = request.FirstName,
+            LastName = request.LastName,
+            Email = email,
+            PhoneNumber = request.PhoneNumber,
+            BirthDate = request.BirthDate.Value,
+            TaxNumber = request.TaxNumber,
+            Citizenship = request.Citizenship
+        };
+
+        _db.Accounts.Add(account);
+        await _db.SaveChangesAsync();
+
+        return CreatedAtAction(nameof(GetById), new { id = account.Id }, account);
+    }
+
+    private static int CalculateAge(DateOnly birthDate)
+    {
+        var today = DateOnly.FromDateTime(DateTime.Today);
+        var age = today.Year - birthDate.Year;
+        if (birthDate > today.AddYears(-age))
+        {
+            age--;
+        }
+        return age;
+    }
+
+    // HIER kommen in 6.3 und 6.4 weitere Methoden dazu
 }
