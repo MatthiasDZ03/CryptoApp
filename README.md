@@ -38,6 +38,6 @@ Swagger UI: <http://localhost:5219/swagger>
 
 | Name | Aufgabenbereich |
 |---|---|
-| | |
-| | |
-| | |
+| Mo | A – API-Kern: Controller, CRUD, Validierung, Routing |
+| Matthias | B – Infrastruktur: Dependency Injection, appsettings, API-Key |
+| Jaasim | C – DDD-Doku, Client (Streamlit), OpenAPI-Doku, Präsentation |
