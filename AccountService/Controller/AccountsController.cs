@@ -19,7 +19,6 @@ public class AccountsController : ControllerBase
         _db = db;
     }
 
-    // READ (alle): GET /api/v1/accounts
     [HttpGet]
     public async Task<ActionResult<List<Account>>> GetAll()
     {
