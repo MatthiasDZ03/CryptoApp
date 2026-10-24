@@ -56,6 +56,7 @@ public class AccountsController : ControllerBase
 
         var account = new Account
         {
+            
             Id = Guid.NewGuid(),
             FirstName = request.FirstName,
             LastName = request.LastName,
@@ -75,7 +76,7 @@ public class AccountsController : ControllerBase
     private static int CalculateAge(DateOnly birthDate)
     {
         var today = DateOnly.FromDateTime(DateTime.Today);
-        var age = today.Year - birthDate.Year;
+        var age = today.Year - birthDate.Year; 
         if (birthDate > today.AddYears(-age))
         {
             age--;
@@ -83,5 +84,54 @@ public class AccountsController : ControllerBase
         return age;
     }
 
-    // HIER kommen in 6.3 und 6.4 weitere Methoden dazu
+    // UPDATE: PUT /api/v1/accounts/{id}
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<Account>> Update(Guid id, UpdateAccountRequest request)
+    {
+        var account = await _db.Accounts.FindAsync(id);
+        if (account == null)
+        {
+            return NotFound();
+        }
+
+        var email = request.Email.Trim().ToLowerInvariant();
+        if (await _db.Accounts.AnyAsync(a => a.Email == email && a.Id != id))
+        {
+            return Problem(detail: "E-Mail wird bereits verwendet.",
+                statusCode: StatusCodes.Status409Conflict);
+        }
+
+        account.FirstName = request.FirstName;
+        account.LastName = request.LastName;
+        account.Email = email;
+        account.PhoneNumber = request.PhoneNumber;
+        account.KycStatus = request.KycStatus;
+        account.Status = request.Status;
+
+        await _db.SaveChangesAsync();
+        return account;
+    }
+
+    // DELETE: DELETE /api/v1/accounts/{id}
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id)
+    {
+        var account = await _db.Accounts.FindAsync(id);
+        if (account == null)
+        {
+            return NotFound();
+        }
+
+        if (account.Balance != 0)
+        {
+            return Problem(detail: "Konto kann nur mit Guthaben 0 gelöscht werden.",
+                statusCode: StatusCodes.Status409Conflict);
+        }
+
+        _db.Accounts.Remove(account);
+        await _db.SaveChangesAsync();
+        return NoContent();
+    }
+
+    // HIER kommen in Schritt 7 Deposit und Withdraw dazu
 }
