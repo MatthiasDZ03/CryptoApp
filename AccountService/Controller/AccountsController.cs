@@ -133,5 +133,50 @@ public class AccountsController : ControllerBase
         return NoContent();
     }
 
-    // HIER kommen in Schritt 7 Deposit und Withdraw dazu
-}
+    // POST /api/v1/accounts/{id}/deposit
+    [HttpPost("{id:guid}/deposit")]
+    public async Task<ActionResult<Account>> Deposit(Guid id, AmountRequest request)
+    {
+        var account = await _db.Accounts.FindAsync(id);
+        if (account == null)
+        {
+            return NotFound();
+        }
+
+        if (account.Status != AccountStatus.Active)
+        {
+            return Problem(detail: "Konto ist nicht aktiv.",
+                statusCode: StatusCodes.Status422UnprocessableEntity);
+        }
+
+        account.Balance += request.Amount;
+        await _db.SaveChangesAsync();
+        return account;
+    }
+
+    // POST /api/v1/accounts/{id}/withdraw
+    [HttpPost("{id:guid}/withdraw")]
+    public async Task<ActionResult<Account>> Withdraw(Guid id, AmountRequest request)
+    {
+        var account = await _db.Accounts.FindAsync(id);
+        if (account == null)
+        {
+            return NotFound();
+        }
+
+        if (account.Status != AccountStatus.Active)
+        {
+            return Problem(detail: "Konto ist nicht aktiv.",
+                statusCode: StatusCodes.Status422UnprocessableEntity);
+        }
+
+        if (request.Amount > account.Balance)
+        {
+            return Problem(detail: "Nicht genug Guthaben.",
+                statusCode: StatusCodes.Status422UnprocessableEntity);
+        }
+
+        account.Balance -= request.Amount;
+        await _db.SaveChangesAsync();
+        return account;
+    }}
