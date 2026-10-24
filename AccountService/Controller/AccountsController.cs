@@ -3,6 +3,8 @@ using AccountService.Dtos;
 using AccountService.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using AccountService.Services;
+
 
 namespace AccountService.Controllers;
 
@@ -13,10 +15,12 @@ public class AccountsController : ControllerBase
     private const int MinimumAge = 18;
 
     private readonly AccountDbContext _db;
+    private readonly IPriceService _priceService;
 
-    public AccountsController(AccountDbContext db)
+    public AccountsController(AccountDbContext db, IPriceService priceService)
     {
         _db = db;
+        _priceService = priceService;
     }
 
     [HttpGet]
@@ -179,4 +183,31 @@ public class AccountsController : ControllerBase
         account.Balance -= request.Amount;
         await _db.SaveChangesAsync();
         return account;
+    }
+        // Nicht-Standard-Route: GET /kaufkraft/{symbol}/{accountId}
+    [HttpGet("~/kaufkraft/{symbol:alpha:minlength(2):maxlength(10)}/{accountId:guid}")]
+    public async Task<ActionResult<BuyingPowerResponse>> GetBuyingPower(string symbol, Guid accountId)
+    {
+        var account = await _db.Accounts.FindAsync(accountId);
+        if (account == null)
+        {
+            return NotFound();
+        }
+
+        var normalizedSymbol = symbol.ToUpperInvariant();
+        var price = await _priceService.GetPriceEurAsync(normalizedSymbol);
+        if (price == null)
+        {
+            return Problem(detail: $"Coin '{normalizedSymbol}' ist unbekannt.",
+                statusCode: StatusCodes.Status404NotFound);
+        }
+
+        return new BuyingPowerResponse
+        {
+            AccountId = account.Id,
+            Symbol = normalizedSymbol,
+            PriceEur = price.Value,
+            BalanceEur = account.Balance,
+            Quantity = Math.Round(account.Balance / price.Value, 8)
+        };
     }}
